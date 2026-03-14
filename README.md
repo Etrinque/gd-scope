@@ -1,8 +1,10 @@
-# gd-scope v1.0
+# gd-scope 
 
 **A unified MCP server for Godot projects with Ollama-compatible endpoints**
 
 Give AI assistants structured access to your Godot project through MCP protocol and Ollama-compatible APIs on a single port. Semantic search available for Ollama models.
+
+Built Specifically to work alongside Ai-Assistant-Hub. [Ai-Assistant-Hub](https://github.com/FlamxGames/godot-ai-assistant-hub)
 
 ---
 
