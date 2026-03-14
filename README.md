@@ -29,10 +29,10 @@ Give AI assistants structured access to your Godot project through MCP protocol 
 
 ## Key Insights
 
-🎯 **Unified Server Architecture** - Single process, single port (3333)
-🔌 **Ollama-Compatible Endpoints** - Works with AI Assistant Hub, VS Code extensions, Rider plugins
-🤖 **Automatic Tool Calling** - Transparent tool execution for Ollama-based clients
-📚 **Dual Protocol Support** - MCP protocol for Claude Desktop/Cursor + Ollama API for everything else
+- 🎯 **Unified Server Architecture** - Single process, single port (3333)
+- 🔌 **Ollama-Compatible Endpoints** - Works with AI Assistant Hub, VS Code extensions, Rider plugins
+- 🤖 **Automatic Tool Calling** - Transparent tool execution for Ollama-based clients
+- 📚 **Dual Protocol Support** - MCP protocol for Claude Desktop/Cursor + Ollama API for everything else
 
 ---
 
