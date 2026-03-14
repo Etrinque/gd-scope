@@ -1,0 +1,6 @@
+{
+  "name": "validate_scene",
+  "description": "Validate a .tscn file for common issues (missing scripts, broken resource refs). Args: path (string).",
+  "type": "gdscript",
+  "script": "./tools/validate_scene.gd"
+}

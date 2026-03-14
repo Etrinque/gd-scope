@@ -1,0 +1,6 @@
+{
+  "name": "scene_inspect",
+  "description": "Extended .tscn inspection via external script. Args: path (string).",
+  "type": "external",
+  "command": "./tools/scene_inspect.py"
+}

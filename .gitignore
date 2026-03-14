@@ -1,0 +1,37 @@
+# Binaries
+/build/
+gd-scope
+gd-scope.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test outputs
+*.test
+*.out
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime
+mcp.json.local
+*.log
+
+# Environment
+mcp.json
+
+# Misc
+/test/

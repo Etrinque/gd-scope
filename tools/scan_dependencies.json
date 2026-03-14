@@ -1,0 +1,6 @@
+{
+  "name": "scan_dependencies",
+  "description": "Scan a GDScript file or the whole project for res:// resource references. Builds a dependency map. Args: path (optional, defaults to whole project).",
+  "type": "gdscript",
+  "script": "./tools/scan_dependencies.gd"
+}

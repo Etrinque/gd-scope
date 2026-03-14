@@ -1,0 +1,6 @@
+{
+  "name": "scene_deep_inspect",
+  "description": "Deep-inspect a .tscn using Godot's own scene loader. Returns full node tree with types, groups, scripts, and properties. Args: path (res:// or project-relative string).",
+  "type": "gdscript",
+  "script": "./tools/scene_deep_inspect.gd"
+}
