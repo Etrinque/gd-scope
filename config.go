@@ -66,13 +66,36 @@ type RAGConfig struct {
 }
 
 // LoadConfig reads mcp.json and fills defaults for any missing fields.
+//
+// Path resolution rules — all relative paths are resolved against the
+// working directory at startup (i.e. the directory the binary runs from),
+// NOT against project_root. This mirrors how project_root itself works:
+// a value of "../.." means two levels up from the binary's cwd.
+//
+// Example layout:
+//
+//	godot-project/
+//	└── addons/gd-scope/   ← binary runs here (cwd)
+//	    ├── docs/           ← docs_dir: "docs"   → cwd/docs   ✓
+//	    ├── tools/          ← tools_dir: "tools" → cwd/tools  ✓
+//	    └── mcp.json        ← project_root: "../.." → cwd/../.. ✓
 func LoadConfig(path string) (*Config, error) {
+	// Capture cwd before anything changes it. All relative paths in the config
+	// are resolved against this directory, so the binary location is the anchor.
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("getwd: %w", err)
+	}
+
 	cfg := defaultConfig()
 
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			// No config file is fine; use all defaults.
+			// No config file is fine — resolve defaults against cwd and return.
+			cfg.DocsDir = filepath.Join(cwd, cfg.DocsDir)
+			cfg.ToolsDir = filepath.Join(cwd, cfg.ToolsDir)
+			cfg.ProjectRoot = cwd
 			return cfg, nil
 		}
 		return nil, fmt.Errorf("read config %s: %w", path, err)
@@ -99,17 +122,20 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.ExternalTimeout = 30
 	}
 
-	// Resolve project root to absolute path now so everything downstream is consistent.
-	if cfg.ProjectRoot == "" {
-		cfg.ProjectRoot, err = os.Getwd()
-		if err != nil {
-			return nil, fmt.Errorf("getwd: %w", err)
+	// Resolve all directory paths to absolute using cwd as the anchor.
+	// filepath.Abs is a no-op for paths that are already absolute.
+	if !filepath.IsAbs(cfg.ProjectRoot) {
+		if cfg.ProjectRoot == "" {
+			cfg.ProjectRoot = cwd
+		} else {
+			cfg.ProjectRoot = filepath.Join(cwd, cfg.ProjectRoot)
 		}
-	} else {
-		cfg.ProjectRoot, err = filepath.Abs(cfg.ProjectRoot)
-		if err != nil {
-			return nil, fmt.Errorf("abs project_root: %w", err)
-		}
+	}
+	if !filepath.IsAbs(cfg.DocsDir) {
+		cfg.DocsDir = filepath.Join(cwd, cfg.DocsDir)
+	}
+	if !filepath.IsAbs(cfg.ToolsDir) {
+		cfg.ToolsDir = filepath.Join(cwd, cfg.ToolsDir)
 	}
 
 	return cfg, nil

@@ -72,8 +72,13 @@ func (r *Registry) docsGet(_ context.Context, a map[string]any) (any, error) {
 		return nil, err
 	}
 
-	// Sanitise page name - no path traversal via the page field.
+	// Sanitise page name — no path traversal via the page field.
+	// Also strip any .md extension the model may have appended: docs_list
+	// returns bare names (e.g. "node_tree") but the model sometimes echoes
+	// them back with the extension ("node_tree.md"), which would produce
+	// a double-suffixed path like "node_tree.md.md".
 	page = filepath.Base(page)
+	page = strings.TrimSuffix(page, ".md")
 	fpath := filepath.Join(r.docsDir(), version, page+".md")
 
 	data, err := os.ReadFile(fpath)
