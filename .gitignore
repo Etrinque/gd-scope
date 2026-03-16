@@ -35,3 +35,4 @@ mcp.json
 
 # Misc
 /test/
+*test.go
