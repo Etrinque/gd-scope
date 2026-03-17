@@ -319,8 +319,8 @@ func (r *Registry) indexProject(ctx context.Context, _ map[string]any) (any, err
 		}
 
 		entries = append(entries, VectorEntry{
-			Key:  item.rel,
-			Text: truncate(item.text, 200), // preview for search result display only
+			Key:       item.rel,
+			Text:      truncate(item.text, 200), // preview for search result display only
 			Embedding: vec,
 		})
 	}

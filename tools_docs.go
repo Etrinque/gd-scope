@@ -106,8 +106,8 @@ func (r *Registry) docsSearch(_ context.Context, a map[string]any) (any, error) 
 	queryLower := strings.ToLower(query)
 
 	type Hit struct {
-		Version string `json:"version"`
-		Page    string `json:"page"`
+		Version string   `json:"version"`
+		Page    string   `json:"page"`
 		Lines   []string `json:"matching_lines"`
 	}
 
