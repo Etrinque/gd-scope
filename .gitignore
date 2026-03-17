@@ -33,8 +33,10 @@ mcp.json.local
 
 # Environment
 mcp.json
+.env
 
 # Misc
 *test*
 /test/
 *test.go
+*.txt
