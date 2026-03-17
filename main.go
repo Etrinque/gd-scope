@@ -26,7 +26,7 @@ func main() {
 		log.Fatalf("registry load: %v", err)
 	}
 
-	// Create server instance for handling both protocols
+	// Server instance handles both protocols
 	srv := &Server{
 		config:   cfg,
 		registry: reg,
@@ -39,7 +39,7 @@ func main() {
 		log.Println("transport: stdio (MCP only)")
 		mcpServer := mcp.NewServer(&mcp.Implementation{
 			Name:    "gd-scope",
-			Version: "2.0.0",
+			Version: "1.0.0",
 		}, nil)
 		registerMCPTools(mcpServer, reg)
 		if err := mcpServer.Run(ctx, &mcp.StdioTransport{}); err != nil {
@@ -60,17 +60,35 @@ func main() {
 	mux.HandleFunc("/api/tags", srv.HandleOllamaTags)
 	mux.HandleFunc("/api/generate", srv.HandleOllamaGenerate)
 
-	// Health check
+	// Server health check
 	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		w.Write([]byte("Status: OK"))
 	})
+
+	// TODO: Endpint for quickly viewing logs in browser in json format
+	// mux.HandleFunc("/log", srv.HandleGetLogs)
 
 	addr := cfg.Addr
 	if addr == "" {
 		addr = ":3333"
 	}
 
+	if srv.config != nil && srv.registry != nil {
+		printStartLog(addr, cfg, reg)
+	}
+
+	httpServer := &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
+
+	if err := httpServer.ListenAndServe(); err != nil {
+		log.Fatalf("server: %v", err)
+	}
+}
+
+func printStartLog(addr string, cfg *Config, reg *Registry) {
 	log.Printf("=== gd-scope server starting ===")
 	log.Printf("Listening on %s", addr)
 	log.Printf("")
@@ -83,23 +101,14 @@ func main() {
 	log.Printf("Loaded tools: %d built-in, %d external", len(reg.handlers), len(reg.external))
 
 	if cfg.OllamaURL != "" {
-		log.Printf("Ollama integration: enabled (%s)", cfg.OllamaURL)
+		log.Printf("Ollama: enabled (%s)", cfg.OllamaURL)
 		log.Printf("  Semantic search: available")
 		log.Printf("  Default model: %s", cfg.DefaultModel)
-	} else {
-		log.Printf("Ollama integration: disabled (semantic search unavailable)")
 	}
+
 	log.Printf("")
 	log.Printf("Ready to accept connections...")
 
-	httpServer := &http.Server{
-		Addr:    addr,
-		Handler: mux,
-	}
-
-	if err := httpServer.ListenAndServe(); err != nil {
-		log.Fatalf("server: %v", err)
-	}
 }
 
 // Server holds the unified server state
@@ -108,6 +117,7 @@ type Server struct {
 	registry *Registry
 }
 
+// TODO: Refactor to Registry method, no reason for this to be in main entry... Split into exported method on reg RegisterTools, private registerBuiltInTools, registerExternalTools
 // registerMCPTools registers all tools with the MCP server (for stdio mode)
 func registerMCPTools(srv *mcp.Server, reg *Registry) {
 	// Helper to create tool handler that wraps registry.Invoke
@@ -163,6 +173,5 @@ func registerMCPTools(srv *mcp.Server, reg *Registry) {
 		},
 	)
 
-	// External tools
 	reg.RegisterExternalMCPTools(srv)
 }
