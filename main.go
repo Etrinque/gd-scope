@@ -111,13 +111,14 @@ func printStartLog(addr string, cfg *Config, reg *Registry) {
 
 }
 
+// TODO: This is doodoo
 // Server holds the unified server state
 type Server struct {
 	config   *Config
 	registry *Registry
 }
 
-// TODO: Refactor to Registry method, no reason for this to be in main entry... Split into exported method on reg RegisterTools, private registerBuiltInTools, registerExternalTools
+// TODO: Refactor to Registry method, no reason for this to be in main entry... Split into exported method on reg git statuRegisterTools, private registerBuiltInTools, registerExternalTools
 // registerMCPTools registers all tools with the MCP server (for stdio mode)
 func registerMCPTools(srv *mcp.Server, reg *Registry) {
 	// Helper to create tool handler that wraps registry.Invoke
@@ -138,20 +139,20 @@ func registerMCPTools(srv *mcp.Server, reg *Registry) {
 	}
 
 	// Filesystem
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "read_file", Description: "Read a file. Args: path (string)"}, invoke("read_file"))
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "list_files", Description: "List files. Args: root (string, optional)"}, invoke("list_files"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "read_file", Description: "Read a file. Args: path (string)"}, invoke("read_file"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "list_files", Description: "List files. Args: root (string, optional)"}, invoke("list_files"))
 
 	// Godot project
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "project_info", Description: "Parse project.godot. No args."}, invoke("project_info"))
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "list_scenes", Description: "List .tscn files. Args: root (optional)"}, invoke("list_scenes"))
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "read_scene", Description: "Parse .tscn file. Args: path (string)"}, invoke("read_scene"))
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "list_scripts", Description: "List .gd/.cs files. Args: root (optional)"}, invoke("list_scripts"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "project_info", Description: "Parse project.godot. No args."}, invoke("project_info"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "list_scenes", Description: "List .tscn files. Args: root (optional)"}, invoke("list_scenes"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "read_scene", Description: "Parse .tscn file. Args: path (string)"}, invoke("read_scene"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "list_scripts", Description: "List .gd/.cs files. Args: root (optional)"}, invoke("list_scripts"))
 
 	// Docs
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "docs_versions", Description: "List doc versions."}, invoke("docs_versions"))
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "docs_list", Description: "List pages. Args: version (string)"}, invoke("docs_list"))
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "docs_get", Description: "Get page. Args: version, page (strings)"}, invoke("docs_get"))
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "docs_search", Description: "Search docs. Args: version, query (strings)"}, invoke("docs_search"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "docs_versions", Description: "List doc versions."}, invoke("docs_versions"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "docs_list", Description: "List pages. Args: version (string)"}, invoke("docs_list"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "docs_get", Description: "Get page. Args: version, page (strings)"}, invoke("docs_get"))
+	mcp.AddTool(srv, &mcp.Tool{Name: "docs_search", Description: "Search docs. Args: version, query (strings)"}, invoke("docs_search"))
 
 	// Semantic search (only if Ollama configured)
 	reg.mu.RLock()
@@ -159,12 +160,12 @@ func registerMCPTools(srv *mcp.Server, reg *Registry) {
 	reg.mu.RUnlock()
 
 	if hasOllama {
-		mcp.AddTool[any, any](srv, &mcp.Tool{Name: "index_project", Description: "Index project for semantic search."}, invoke("index_project"))
-		mcp.AddTool[any, any](srv, &mcp.Tool{Name: "semantic_search", Description: "Semantic search. Args: query (string), top_k (int, optional)"}, invoke("semantic_search"))
+		mcp.AddTool(srv, &mcp.Tool{Name: "index_project", Description: "Index project for semantic search."}, invoke("index_project"))
+		mcp.AddTool(srv, &mcp.Tool{Name: "semantic_search", Description: "Semantic search. Args: query (string), top_k (int, optional)"}, invoke("semantic_search"))
 	}
 
 	// Management
-	mcp.AddTool[any, any](srv, &mcp.Tool{Name: "reload_tools", Description: "Reload tool configs."},
+	mcp.AddTool(srv, &mcp.Tool{Name: "reload_tools", Description: "Reload tool configs."},
 		func(ctx context.Context, req *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
 			if err := reg.Load(); err != nil {
 				return nil, nil, err
