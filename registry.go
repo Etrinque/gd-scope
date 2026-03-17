@@ -194,7 +194,7 @@ func (r *Registry) RegisterExternalMCPTools(srv *mcp.Server) {
 		if desc == "" {
 			desc = fmt.Sprintf("External tool: %s", n)
 		}
-		mcp.AddTool[any, any](srv, &mcp.Tool{Name: n, Description: desc},
+		mcp.AddTool(srv, &mcp.Tool{Name: n, Description: desc},
 			func(ctx context.Context, req *mcp.CallToolRequest, input any) (*mcp.CallToolResult, any, error) {
 				// Convert input to map[string]any
 				var params map[string]any
