@@ -2,16 +2,19 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
+	"log"
 	"os"
-	"path/filepath"
 )
+
+const configFileName = "mcp.json"
 
 // Config is loaded from mcp.json at startup.
 // All fields have sensible defaults so minimal config is needed.
 type Config struct {
 	// ProjectRoot is the absolute path to the Godot project.
 	// Defaults to the current working directory.
+	// TODO: REMOVE CWD DEFAULT. walk tree up until project.godot is found...
 	ProjectRoot string `json:"project_root"`
 
 	// DocsDir is where versioned Godot documentation lives (docs/4.3/, docs/4.2/, …).
@@ -28,6 +31,7 @@ type Config struct {
 
 	// EmbedModel is the Ollama model used for embeddings.
 	// Defaults to "nomic-embed-text".
+	// TODO: On start, grep for nomic-embed-text in api/tags and inform user if not present
 	EmbedModel string `json:"embed_model"`
 
 	// Addr is the HTTP listen address when not using stdio transport.
@@ -41,10 +45,10 @@ type Config struct {
 	// GodotBin is the path to the Godot executable used for gdscript tools.
 	// Defaults to "godot" (assumes it is on PATH).
 	// Override if your Godot binary is not on PATH, e.g. "/opt/godot/godot4".
+	// TODO: Use os.ExecPath("godot") to find if godot is even in the PATH of the user. macOS will be postfixed with .app inform user if not on PATH
 	GodotBin string `json:"godot_bin"`
 
-	// DefaultModel is the Ollama model to use when client doesn't specify one.
-	// Only used for Ollama-compatible endpoints (/api/chat).
+	// DefaultModel is a reasonable starting model for Ollama-compatible endpoints (/api/chat).
 	// Defaults to "qwen2.5-coder:7b".
 	DefaultModel string `json:"default_model"`
 
@@ -65,82 +69,44 @@ type RAGConfig struct {
 	AutoDetect bool `json:"auto_detect"`
 }
 
-// LoadConfig reads mcp.json and fills defaults for any missing fields.
-//
-// Path resolution rules — all relative paths are resolved against the
-// working directory at startup (i.e. the directory the binary runs from),
-// NOT against project_root. This mirrors how project_root itself works:
-// a value of "../.." means two levels up from the binary's cwd.
-//
-// Example layout:
-//
-//	godot-project/
-//	└── addons/gd-scope/   ← binary runs here (cwd)
-//	    ├── docs/           ← docs_dir: "docs"   → cwd/docs   ✓
-//	    ├── tools/          ← tools_dir: "tools" → cwd/tools  ✓
-//	    └── mcp.json        ← project_root: "../.." → cwd/../.. ✓
-func LoadConfig(path string) (*Config, error) {
-	// Capture cwd before anything changes it. All relative paths in the config
-	// are resolved against this directory, so the binary location is the anchor.
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("getwd: %w", err)
-	}
-
+// bootstrapConfig generates the mcp.json config file if the file is not found within the binary directory. Ensuring there is always a config file.
+func bootstrapConfig() (*Config, error) {
+	// Check if config file exists, if not create it with defaults.
 	cfg := defaultConfig()
 
-	data, err := os.ReadFile(path)
+	file, err := os.Create(configFileName)
 	if err != nil {
-		if os.IsNotExist(err) {
-			// No config file is fine — resolve defaults against cwd and return.
-			cfg.DocsDir = filepath.Join(cwd, cfg.DocsDir)
-			cfg.ToolsDir = filepath.Join(cwd, cfg.ToolsDir)
-			cfg.ProjectRoot = cwd
-			return cfg, nil
-		}
-		return nil, fmt.Errorf("read config %s: %w", path, err)
+		log.Fatalf("could not create mcp.json config file: %v", err)
 	}
-
-	if err := json.Unmarshal(data, cfg); err != nil {
-		return nil, fmt.Errorf("parse config %s: %w", path, err)
-	}
-
-	// Re-apply defaults for anything left as zero value after parsing.
-	if cfg.DocsDir == "" {
-		cfg.DocsDir = "docs"
-	}
-	if cfg.ToolsDir == "" {
-		cfg.ToolsDir = "tools"
-	}
-	if cfg.EmbedModel == "" {
-		cfg.EmbedModel = "nomic-embed-text"
-	}
-	if cfg.Addr == "" {
-		cfg.Addr = ":3333"
-	}
-	if cfg.ExternalTimeout == 0 {
-		cfg.ExternalTimeout = 30
-	}
-
-	// Resolve all directory paths to absolute using cwd as the anchor.
-	// filepath.Abs is a no-op for paths that are already absolute.
-	if !filepath.IsAbs(cfg.ProjectRoot) {
-		if cfg.ProjectRoot == "" {
-			cfg.ProjectRoot = cwd
-		} else {
-			cfg.ProjectRoot = filepath.Join(cwd, cfg.ProjectRoot)
-		}
-	}
-	if !filepath.IsAbs(cfg.DocsDir) {
-		cfg.DocsDir = filepath.Join(cwd, cfg.DocsDir)
-	}
-	if !filepath.IsAbs(cfg.ToolsDir) {
-		cfg.ToolsDir = filepath.Join(cwd, cfg.ToolsDir)
+	defer file.Close()
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "\t")
+	if err := encoder.Encode(*cfg); err != nil {
+		return &Config{}, errors.New("Error creating default config;")
 	}
 
 	return cfg, nil
 }
 
+// LoadConfig reads in mcp.json config file data, if config file is missing we bootstrap one with defaults
+func LoadConfig() (*Config, error) {
+	file, err := os.Open(configFileName)
+	if err != nil {
+		errors.Is(err, os.ErrNotExist)
+		log.Printf("INFO: config file does not exist, creating now...")
+		return bootstrapConfig()
+	}
+	defer file.Close()
+
+	var cfg *Config
+	if err := json.NewDecoder(file).Decode(&cfg); err != nil {
+		return &Config{}, errors.New("Error reading config file;")
+	}
+	return cfg, nil
+}
+
+// Path resolution rules — all relative paths are resolved against the
+// working directory at startup (i.e. the directory the gd-scope binary runs from)
 func defaultConfig() *Config {
 	cwd, _ := os.Getwd()
 	return &Config{
@@ -153,7 +119,7 @@ func defaultConfig() *Config {
 		DefaultModel:    "qwen2.5-coder:7b",
 		RAG: RAGConfig{
 			Enabled:    false, // Opt-in for now
-			TopK:       3,
+			TopK:       5,
 			AutoDetect: true,
 		},
 		// OllamaURL intentionally empty - disables semantic search by default.
