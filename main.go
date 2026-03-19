@@ -12,7 +12,7 @@ import (
 func main() {
 	log.SetFlags(log.Ltime | log.Lshortfile)
 
-	cfg, err := LoadConfig("mcp.json")
+	cfg, err := LoadConfig()
 	if err != nil {
 		log.Fatalf("config: %v", err)
 	}
@@ -111,7 +111,7 @@ func printStartLog(addr string, cfg *Config, reg *Registry) {
 
 }
 
-// TODO: This is doodoo
+// TODO: This is doodoo, Server is not the actual server instance it is behavior, it is told to act in a particular way and it can only act on known, particular things...
 // Server holds the unified server state
 type Server struct {
 	config   *Config

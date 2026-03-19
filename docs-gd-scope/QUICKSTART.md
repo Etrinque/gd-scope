@@ -66,8 +66,13 @@ ollama list
 ## 4. Install in Godot Project
 
 ```bash
-# Create addon directory in your Godot project
-mkdir -p /path/to/your/project/addons/gd-scope
+# Create addon directory in your Godot project if it doesnt exist
+mkdir -p /path/to/your/project/addons
+# Cd into the addons dir
+cd /path/to/your/project/addons
+# Clone repo down into Godot project addons directory
+git clone https://github.com/etrinque/gd-scope
+# Cd to gd-scope directory
 cd /path/to/your/project/addons/gd-scope
 
 ```
